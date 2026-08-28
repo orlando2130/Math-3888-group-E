@@ -15,7 +15,7 @@ Toolbox wk 4: Centrality Measures
     - closeness centrality
 
     NOTES:
-        - I read in Nielson that atteniation factor for Katz centrality is better closer to the inverse of the leading
+        - I read in Newman that atteniation factor for Katz centrality is better closer to the inverse of the leading
             eigenvalue, but this wasn't very well justified.
 """
 
