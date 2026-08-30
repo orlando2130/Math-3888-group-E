@@ -22,6 +22,9 @@ Toolbox wk 4: Centrality Measures
 
 def node_centrality_measures(G: nx.Graph, target: str) -> dict[str, float | int]:
     """
+    This method is unfinished, but I dont plan on using it, 
+    better to compute all cenrality measures for all nodes at once and use that data.
+    
     Given a target protein, computes the centrality measures in toolbox 4
 
     Parameters
