@@ -4,6 +4,13 @@ import pandas as pd
 import numpy as np  
 import networkx as nx 
 from networkx.algorithms.community import louvain_communities
+import sys
+import os
+
+sys.path.append(os.path.abspath('../'))
+from src.reading_in import read_in_proteins
+
+filepath = "4932.protein.links.v12.0.txt"
 
 #building the graph from the protien list. Not sure why but I had to name it v11 not v12?
 
@@ -62,7 +69,16 @@ def find_adjacent_communities(G, communities, target_protien):
 
     return adjecent_communities
 
-        
+def eliminate_small_communities(G, threshold):
+    communities_list = nx.algorithms.community.louvain_communities(G)
+    communities_list.sort(key=len)
+    # print(len(communities_list[0]))
+    # print(len(communities_list[-1]))
+
+    filtered_list = [x for x in communities_list if len(x) >= threshold]
+    # print(len(filtered_list[0]))
+    # print(len(filtered_list[-1]))
+    return filtered_list
 
 #print(find_adjacent_communities(G, partition_graph(G), '4932.YDR227W')) we can choose the protien the bio chem people want
 
