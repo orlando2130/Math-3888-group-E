@@ -1,0 +1,8 @@
+def comm(k):
+    communities = nx.community.louvain_communities(G0, seed=123)
+    adjacent_communities = [
+    (i, comm)
+    for i, comm in enumerate(communities)
+    if any(G0.has_edge(k, n) for n in comm)]
+    for i, comm in adjacent_communities:
+        print(f"Community {i}: {comm}")
