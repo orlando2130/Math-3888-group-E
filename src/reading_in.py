@@ -30,11 +30,11 @@ def _load_essential_proteins(essential_protein_filepath: str) -> pd.DataFrame:
     df.columns = ['counter', 'systematic name', 'organism', 'standard name', 'description']
     return df
 
-def read_in_proteins(filepath: str, 
+def read_in_proteins(filepath: str = "data/raw/protein.links.v12.0.txt.gz", 
                      *, 
                      probability_threshold: int | float = 750,
                      include_essential_proteins: bool = True,
-                     essential_protein_filepath: str | None = None,
+                     essential_protein_filepath: str = "data/raw/EssentialProteins_YeastMine_cerevisiae.csv",
                      connected: bool = False
                      ) -> nx.Graph:
     """
@@ -42,13 +42,13 @@ def read_in_proteins(filepath: str,
     
     Parameters
     ----------
-    filepath: str
+    filepath: str = "data/raw/protein.links.v12.0.txt.gz"
         filepath to protein links data
     probability_threshold: int | float = 750
         method automatically removes all edges with combined_score less than this value
     include_essential_proteins: bool = True
         If False, removes essential proteins from network
-    essential_protein_filepath: str | None = None
+    essential_protein_filepath: str = ""data/raw/EssentialProteins_YeastMine_cerevisiae.csv"
         filepath to essential protein data
     connected: bool = False
         if True, return the graph of only the largest connected component

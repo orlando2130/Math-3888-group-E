@@ -11,7 +11,7 @@ Toolbox wk 6: Community Finding
 """
 
 
-def partition_graph(x: nx.Graph, seed: int | None = 42) -> list[set]:
+def partition_graph(x: nx.Graph, seed: int | None = 42, resolution: float = 1.0) -> list[set]:
     """
     Partition a given connected graph into its communitites using Louvain Community Detection Algorithm.
 
@@ -22,6 +22,10 @@ def partition_graph(x: nx.Graph, seed: int | None = 42) -> list[set]:
     seed : int | None = 42
         A seed to control RNG in Louvain algorithm. If None, use the global RNG for the function's preferred package:
         https://networkx.org/documentation/stable/reference/randomness.html#randomness
+    resolution : float = 1.0
+        The resolution parameter for the Louvain algorithm. Values greater than 1
+        favor smaller, more numerous communities; values less than 1 favor larger,
+        fewer communities.
 
     Returns
     -------
@@ -30,14 +34,14 @@ def partition_graph(x: nx.Graph, seed: int | None = 42) -> list[set]:
     """
 
     final_communities = []
-    communities = nx.community.louvain_communities(x, seed=seed)
+    communities = nx.community.louvain_communities(x, seed=seed, resolution=resolution)
     sorted_communities = sorted(communities, key = len)  
     for community in sorted_communities:
         if len(community)>1:
             final_communities.append(community)
     return final_communities
 
-def partition_graph_size(x: nx.Graph, seed: int | None = 42) -> list[tuple[set, int]]:
+def partition_graph_size(x: nx.Graph, seed: int | None = 42, resolution: float = 1.0) -> list[tuple[set, int]]:
     """
     Partition a given connected graph into its communities using the Louvain Community
     Detection Algorithm, returning each community alongside its size.
@@ -49,6 +53,10 @@ def partition_graph_size(x: nx.Graph, seed: int | None = 42) -> list[tuple[set, 
     seed : int | None = 42
         A seed to control RNG in Louvain algorithm. If None, use the global RNG for the function's preferred package:
         https://networkx.org/documentation/stable/reference/randomness.html#randomness
+    resolution : float = 1.0
+        The resolution parameter for the Louvain algorithm. Values greater than 1
+        favor smaller, more numerous communities; values less than 1 favor larger,
+        fewer communities.
 
     Returns
     -------
@@ -57,7 +65,7 @@ def partition_graph_size(x: nx.Graph, seed: int | None = 42) -> list[tuple[set, 
         with more than one member.
     """
     final_communities = []
-    communities = nx.community.louvain_communities(x, seed=seed)
+    communities = nx.community.louvain_communities(x, seed=seed, resolution=resolution)
     sorted_communities = sorted(communities, key=len)
     for community in sorted_communities:
         if len(community) > 1:
@@ -65,12 +73,14 @@ def partition_graph_size(x: nx.Graph, seed: int | None = 42) -> list[tuple[set, 
     return [(community, len(community)) for community in final_communities]
 
 
-def find_adjacent_communities(G: nx.Graph, communities: list[set], target_protien) -> list[set]:
+def get_adjacent_communities(G: nx.Graph, communities: list[set], target_protein: str = "YMR231W") -> list[set]:
     """
-    Find all communities adjacent to a given target protein's community.
+    Find all communities directly connected to the community containing the
+    target protein.
 
-    A community is considered adjacent if any of the target protein's neighbors
-    belong to it, excluding the target protein's own community.
+    A community is considered adjacent if any node in it is connected by an
+    edge to any node in the target protein's community, excluding the target
+    protein's own community.
 
     Parameters
     ----------
@@ -78,29 +88,44 @@ def find_adjacent_communities(G: nx.Graph, communities: list[set], target_protie
         The full networkx Graph containing the target protein and its neighbors.
     communities : list[set]
         A list of communities (sets of nodes), as produced by partition_graph(x).
-    target_protien
-        The node (protein) whose adjacent communities should be found.
+    target_protein : str = "YMR231W"
+        The node (protein) whose community's neighbors should be found.
 
     Returns
     -------
     list[set]
-        A list of communities (sets of nodes) adjacent to the target protein's community.
+        A list of communities adjacent to the target protein's community.
     """
-    neighbors = G.neighbors(target_protien)
-    protien_communities = {}
-    adjecent_communities = []
-    for comunity in communities:
-        for node in comunity:
-            protien_communities[node] = comunity
-    for node in neighbors:
-        if protien_communities[node] not in adjecent_communities and protien_communities[node] != protien_communities[target_protien]:
-            adjecent_communities.append(protien_communities[node])
+    # Build node -> community lookup once
+    node_to_community = {}
+    for community in communities:
+        for node in community:
+            node_to_community[node] = community
 
-    return adjecent_communities
+    if target_protein not in node_to_community:
+        raise ValueError(f"{target_protein} not found in any community")
+
+    target_community = node_to_community[target_protein]
+
+    adjacent_communities = []
+    seen = set()  # track by id() since sets aren't hashable
+
+    for node in target_community:
+        if node not in G:
+            continue
+        for neighbor in G.neighbors(node):
+            neighbor_community = node_to_community.get(neighbor)
+            if neighbor_community is None or neighbor_community is target_community:
+                continue
+            if id(neighbor_community) not in seen:
+                seen.add(id(neighbor_community))
+                adjacent_communities.append(neighbor_community)
+
+    return adjacent_communities
 
 
 
-def eliminate_small_communities(G: nx.Graph, threshold: int) -> list[set]:
+def eliminate_small_communities(G: nx.Graph, threshold: int, seed: int | None = 42, resolution: float = 1.0) -> list[set]:
     """
     Partition a graph into communities using the Louvain Community Detection Algorithm
     and remove any communities smaller than a given threshold.
@@ -112,6 +137,13 @@ def eliminate_small_communities(G: nx.Graph, threshold: int) -> list[set]:
     threshold : int
         The minimum community size to keep. Communities with fewer nodes than this
         are discarded.
+    seed : int | None = 42
+        A seed to control RNG in Louvain algorithm. If None, use the global RNG for the function's preferred package:
+        https://networkx.org/documentation/stable/reference/randomness.html#randomness
+    resolution : float = 1.0
+        The resolution parameter for the Louvain algorithm. Values greater than 1
+        favor smaller, more numerous communities; values less than 1 favor larger,
+        fewer communities.
 
     Returns
     -------
@@ -119,12 +151,10 @@ def eliminate_small_communities(G: nx.Graph, threshold: int) -> list[set]:
         A list of communities (sets of nodes) with size >= threshold, sorted from
         smallest to largest.
     """
-    communities_list = nx.algorithms.community.louvain_communities(G)
+    communities_list = nx.algorithms.community.louvain_communities(G, seed=seed, resolution=resolution)
     communities_list.sort(key=len)
     filtered_list = [x for x in communities_list if len(x) >= threshold]
     return filtered_list
-
-
 
 
 def size_distribution_of_communities(communities_list: list[set]) -> list[int]:
@@ -173,7 +203,6 @@ def histogram_of_community_size(communities_list: list[set]) -> None:
     ----------
     communities_list : list[set]
         Collection of communities, where each community is a set of nodes.
-        The size of a community is the number of nodes it contains.
 
     Returns
     -------
