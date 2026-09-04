@@ -22,37 +22,48 @@ Toolbox wk 4: Centrality Measures
 
 def node_centrality_measures(G: nx.Graph, target: str) -> dict[str, float | int]:
     """
-    This method is unfinished, but I dont plan on using it, 
-    better to compute all cenrality measures for all nodes at once and use that data.
-    
-    Given a target protein, computes the centrality measures in toolbox 4
+    Compute centrality measures for a target node.
+
+    This method is currently unfinished and is not intended for use. It is
+    more efficient to compute each centrality measure for all nodes in the
+    graph once, and then retrieve the values for the target node.
 
     Parameters
     ----------
     G : nx.Graph
-        networkx graph to compute centrality measures on
+        NetworkX graph on which to compute the centrality measures.
     target : str
-        systematic name of target protein
-    
+        Systematic name of the target protein.
+
     Returns
     -------
-    centrality_dict : dict[str, float | int]
-        centrality dictionary holding the result of all centrality measures. Of the form
-            {"degree" : degree,
-            "eigenvector" : eigenvector,
-            "katz" : katz,
-            "page rank" : page_rank,
-            "betweenness" : betweenness,
-            "subgraph" : subgraph,
-            "closeness" : closeness}
+    dict[str, float]
+        Dictionary containing the centrality measures for the target protein.
+        The dictionary has the form::
+
+            {
+                "degree": degree,
+                "eigenvector": eigenvector,
+                "katz": katz,
+                "page_rank": page_rank,
+                "betweenness": betweenness,
+                "subgraph": subgraph,
+                "closeness": closeness
+            }
 
     Notes
     -----
-        - This method should not be used for more than one node, it is terribly innefficient. Should take about the same time to 
-            compute these for the entire graph and just put them all in a dictionary, will implement this method at some point TODO
-        - I have not tested how the functions actually operate, just clicked the first function in the networkx 
-            library that matches the name I am looking for. Some different algorithms to choose from in there
+    - This method should not be used repeatedly for different nodes, as it
+    recomputes the centrality measures each time. Computing each measure
+    for the entire graph once is substantially more efficient.
+    - The NetworkX functions currently selected for each centrality measure
+    have not yet been fully tested or validated for this application.
+    NetworkX provides multiple algorithms and implementations for some
+    centrality measures, so these choices may need to be reviewed.
+    - TODO: Implement a more efficient approach that computes all centrality
+    measures for the graph once and stores the results for later lookup.
     """
+
     # check that protein is actually in our network
     graph_proteins = list(G.nodes)
     if not target in graph_proteins:
