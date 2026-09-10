@@ -85,7 +85,7 @@ def sort_proteins_by_frequency(paths: list[list], descending: bool = True) -> li
     for path in paths:
         for node in path:
             if node not in counts:
-                counts[node] = 0
+                counts[node] = 1
             counts[node] += 1
 
     return sorted(counts.items(), key=lambda item: item[1], reverse=descending)
