@@ -72,8 +72,7 @@ def partition_graph_size(x: nx.Graph, seed: int | None = 42, resolution: float =
             final_communities.append(community)
     return [(community, len(community)) for community in final_communities]
 
-
-def get_adjacent_communities(G: nx.Graph, communities: list[set], target_protein: str = "YMR231W") -> list[set]:
+def get_adjacent_communities(G: nx.Graph, communities: list[set], target_protein: str = "YMR231W") -> tuple[set, list[set]]:
     """
     Find all communities directly connected to the community containing the
     target protein.
@@ -96,7 +95,6 @@ def get_adjacent_communities(G: nx.Graph, communities: list[set], target_protein
     list[set]
         A list of communities adjacent to the target protein's community.
     """
-    # Build node -> community lookup once
     node_to_community = {}
     for community in communities:
         for node in community:
@@ -121,9 +119,7 @@ def get_adjacent_communities(G: nx.Graph, communities: list[set], target_protein
                 seen.add(id(neighbor_community))
                 adjacent_communities.append(neighbor_community)
 
-    return adjacent_communities
-
-
+    return target_community, adjacent_communities
 
 def eliminate_small_communities(G: nx.Graph, threshold: int, seed: int | None = 42, resolution: float = 1.0) -> list[set]:
     """
@@ -155,7 +151,6 @@ def eliminate_small_communities(G: nx.Graph, threshold: int, seed: int | None = 
     communities_list.sort(key=len)
     filtered_list = [x for x in communities_list if len(x) >= threshold]
     return filtered_list
-
 
 def size_distribution_of_communities(communities_list: list[set]) -> list[int]:
     """
