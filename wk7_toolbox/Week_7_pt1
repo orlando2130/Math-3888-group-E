@@ -1,0 +1,42 @@
+import numpy as np 
+import pandas as pd 
+import networkx as nx
+import markov_clustering as mc
+
+df = pd.read_csv(r"C:\Users\harry\Downloads\Coding projects\Netowrk_toolboxes\4932.protein.links.v12.0.txt", sep=" ")
+df = df[df["combined_score"] >= 750]  # apply threshold while loading
+G0 = nx.from_pandas_edgelist(df, "protein1", "protein2", edge_attr="combined_score")
+
+largest_cc_nodes = max(nx.connected_components(G0), key=len)
+G_connected = G0.subgraph(largest_cc_nodes).copy()
+
+
+node_list = list(G_connected.nodes())  # index i corresponds to protein node_list[i]
+
+#Decresing the inflation will make the clusters larger, This is an abritary choice
+matrix = nx.to_numpy_array(G_connected)
+result = mc.run_mcl(matrix, inflation=1.2)
+clusters = mc.get_clusters(result)
+
+#This part basically creates a dictionary where you input the node and output the cluster it puts it in
+node_to_cluster = {}
+for cluster_id, cluster in enumerate(clusters):
+    for idx in cluster:
+        node_to_cluster[node_list[idx]] = cluster_id
+
+#This is the function which finds the smallest distance from a target protien to the clusters
+def cluster_min_distances(G, target, node_to_cluster):
+    distances_from_target = nx.shortest_path_length(G, source=target)
+    cluster_min_dist = {}
+    for node, dist in distances_from_target.items():
+        cid = node_to_cluster[node]
+        if cid not in cluster_min_dist or dist < cluster_min_dist[cid]:
+            cluster_min_dist[cid] = dist
+    return cluster_min_dist
+
+# Here you can choose a protein and then choose the distance you are looking for
+target_protein = "4932.YGR220C"
+cluster_min_dist = cluster_min_distances(G_connected, target_protein, node_to_cluster)
+candidates = {cid: d for cid, d in cluster_min_dist.items() if 3 <= d <= 5}
+
+print(candidates)
