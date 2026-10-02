@@ -183,6 +183,53 @@ def to_list_of_sets(partition):
     return list(partition)  # already list-of-sets; just make sure it's a list
 
 def louvain_frequencies_using_high_degree_proteins(G, n, top_n, match_t):
+    """
+    Estimate community stability by running Louvain multiple times and tracking
+    each protein's community assignment frequency.
+
+    Since Louvain community detection is stochastic, running it repeatedly on the
+    same graph can produce different partitions. This function runs Louvain `n`
+    times, uses each community's highest-degree proteins as a "signature" to match
+    communities across runs (since raw community IDs aren't consistent from run to
+    run), and then tracks, for each protein, how often it lands in each labelled
+    community across all runs.
+
+    Parameters
+    ----------
+    G : nx.Graph
+        Graph to partition.
+    n : int
+        Number of times to run the Louvain algorithm.
+    top_n : int
+        Number of highest-degree proteins to use as each community's signature
+        (passed to `community_signature`), used to match communities across runs.
+    match_t : float
+        Minimum Jaccard similarity between signatures required to match a community
+        in the current run to a previously labelled community. If no existing
+        community meets this threshold, the community is assigned a new label.
+
+    Returns
+    -------
+    results_df : pd.DataFrame
+        One row per protein in `G`, with columns:
+
+        - ``protein`` : the protein/node.
+        - ``dominant_community`` : label of the community the protein was most
+          frequently assigned to across the `n` runs.
+        - ``dominant_frequency`` : fraction of runs (out of `n`) in which the
+          protein was assigned to its dominant community.
+        - ``number_of_communities`` : number of distinct labelled communities the
+          protein was assigned to across all runs.
+        - ``community_frequencies`` : dict mapping each community label the
+          protein was assigned to, to the fraction of runs it appeared in that
+          community.
+
+    Notes
+    -----
+    Community labels are only stable within a single call to this function, since
+    labelling is built up incrementally as runs are processed and new communities
+    are encountered.
+    """
     raw_partitions = run_louvain_n_times(G, n)
     partitions = [to_list_of_sets(p) for p in raw_partitions] 
     print("finished louvain")
