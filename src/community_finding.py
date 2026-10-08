@@ -11,14 +11,24 @@ Toolbox wk 6: Community Finding
 """
 
 
-def partition_graph(x: nx.Graph, seed: int | None = 42, resolution: float = 1.0) -> list[set]:
+def partition_graph(
+    x: nx.Graph,
+    seed: int | None = 42,
+    resolution: float = 1.0,
+    *,
+    max_size: int | None = None,
+) -> list[set]:
     """
-    Partition a given connected graph into its communitites using Louvain Community Detection Algorithm.
+    Partition a given connected graph into its communities using Louvain Community Detection Algorithm.
 
     Parameters
     ----------
     x : nx.Graph
         A connected networkx Graph object to partition.
+    max_size : int | None = None
+        The maximum allowed size for a community. If any resulting community exceeds
+        this size, Louvain is re-run on the subgraph induced by that community's nodes
+        (with an increased resolution) to split it further. If None, no size limit is enforced.
     seed : int | None = 42
         A seed to control RNG in Louvain algorithm. If None, use the global RNG for the function's preferred package:
         https://networkx.org/documentation/stable/reference/randomness.html#randomness
@@ -29,19 +39,47 @@ def partition_graph(x: nx.Graph, seed: int | None = 42, resolution: float = 1.0)
 
     Returns
     -------
-    final_communitites : list[set]
+    final_communities : list[set]
         A list of sets of nodes, each set holding the nodes belonging to one community.
     """
 
-    final_communities = []
-    communities = nx.community.louvain_communities(x, seed=seed, resolution=resolution)
-    sorted_communities = sorted(communities, key = len)  
-    for community in sorted_communities:
-        if len(community)>1:
-            final_communities.append(community)
-    return final_communities
+    def _partition(subgraph: nx.Graph, resolution: float) -> list[set]:
+        communities = nx.community.louvain_communities(subgraph, seed=seed, resolution=resolution)
 
-def partition_graph_size(x: nx.Graph, seed: int | None = 42, resolution: float = 1.0) -> list[tuple[set, int]]:
+        if max_size is None:
+            return [c for c in communities if len(c) > 1]
+
+        result = []
+        for community in communities:
+            if len(community) <= 1:
+                continue
+            if len(community) <= max_size:
+                result.append(community)
+            else:
+                # Community too large: re-run Louvain on just this subgraph,
+                # bumping resolution to push toward smaller communities.
+                sub = subgraph.subgraph(community)
+                split = _partition(sub, resolution * 2)
+
+                # If splitting didn't actually shrink anything (e.g. a dense
+                # clique that Louvain won't break up further), stop recursing
+                # and keep the oversized community as-is to avoid infinite loops.
+                if len(split) <= 1 or all(len(s) == len(community) for s in split):
+                    result.append(community)
+                else:
+                    result.extend(split)
+        return result
+
+    final_communities = _partition(x, resolution)
+    return sorted(final_communities, key=len)
+
+def partition_graph_size(
+    x: nx.Graph,
+    seed: int | None = 42,
+    resolution: float = 1.0,
+    *,
+    max_size: int | None = None,
+) -> list[tuple[set, int]]:
     """
     Partition a given connected graph into its communities using the Louvain Community
     Detection Algorithm, returning each community alongside its size.
@@ -50,6 +88,10 @@ def partition_graph_size(x: nx.Graph, seed: int | None = 42, resolution: float =
     ----------
     x : nx.Graph
         A connected networkx Graph object to partition.
+    max_size : int | None = None
+        The maximum allowed size for a community. If any resulting community exceeds
+        this size, Louvain is re-run on the subgraph induced by that community's nodes
+        (with an increased resolution) to split it further. If None, no size limit is enforced.
     seed : int | None = 42
         A seed to control RNG in Louvain algorithm. If None, use the global RNG for the function's preferred package:
         https://networkx.org/documentation/stable/reference/randomness.html#randomness
@@ -62,15 +104,39 @@ def partition_graph_size(x: nx.Graph, seed: int | None = 42, resolution: float =
     -------
     list[tuple[set, int]]
         A list of (community, size) tuples, where each community is a set of nodes
-        with more than one member.
+        with more than one member, sorted by size.
     """
-    final_communities = []
-    communities = nx.community.louvain_communities(x, seed=seed, resolution=resolution)
-    sorted_communities = sorted(communities, key=len)
-    for community in sorted_communities:
-        if len(community) > 1:
-            final_communities.append(community)
-    return [(community, len(community)) for community in final_communities]
+
+    def _partition(subgraph: nx.Graph, resolution: float) -> list[set]:
+        communities = nx.community.louvain_communities(subgraph, seed=seed, resolution=resolution)
+
+        if max_size is None:
+            return [c for c in communities if len(c) > 1]
+
+        result = []
+        for community in communities:
+            if len(community) <= 1:
+                continue
+            if len(community) <= max_size:
+                result.append(community)
+            else:
+                # Community too large: re-run Louvain on just this subgraph,
+                # bumping resolution to push toward smaller communities.
+                sub = subgraph.subgraph(community)
+                split = _partition(sub, resolution * 2)
+
+                # If splitting didn't actually shrink anything (e.g. a dense
+                # clique that Louvain won't break up further), stop recursing
+                # and keep the oversized community as-is to avoid infinite loops.
+                if len(split) <= 1 or all(len(s) == len(community) for s in split):
+                    result.append(community)
+                else:
+                    result.extend(split)
+        return result
+
+    final_communities = _partition(x, resolution)
+    sorted_communities = sorted(final_communities, key=len)
+    return [(community, len(community)) for community in sorted_communities]
 
 def get_adjacent_communities(G: nx.Graph, communities: list[set], target_protein: str = "YMR231W") -> tuple[set, list[set]]:
     """
@@ -216,3 +282,4 @@ def histogram_of_community_size(communities_list: list[set]) -> None:
     plt.stairs(counts, bins)
     plt.plot()
     return None
+
