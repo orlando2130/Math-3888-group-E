@@ -30,16 +30,16 @@ from matplotlib.collections import LineCollection
 # Easy-to-change settings
 # ---------------------------------------------------------------------------
 NODE_COUNT = 50              # Number of nodes in the network (at least 3)
-ALPHA = 0.9                  # Edge-following probability; teleport is 1 - ALPHA
-WALKER_INTERVAL_MS = 200     # Time per walker step, in milliseconds
+ALPHA = 0.80                  # Edge-following probability; teleport is 1 - ALPHA
+WALKER_INTERVAL_MS = 80     # Time per walker step, in milliseconds
 SUBSTEPS = 4                 # Animation frames per step (higher = smoother)
-FADE_PER_STEP = 0.005        # Heat decay per walker step (0 to 1)
+FADE_PER_STEP = 0.004        # Heat decay per walker step (0 to 1)
 RANDOM_SEED = 7              # Set to None for a different network each run
 
 # Saving
 SAVE_GIF = True
-SAVE_STEPS = 200             # Walker steps to render into the GIF
-SAVE_DPI = 120                # Lower = smaller file
+SAVE_STEPS = 400             # Walker steps to render into the GIF
+SAVE_DPI = 140                # Lower = smaller file
 
 # Network/layout settings
 EDGE_PROBABILITY = 0.03
@@ -98,7 +98,7 @@ def build_animation() -> Tuple[FuncAnimation, plt.Figure]:
     ax.set_title(
         "Personalised PageRank: random walk with resets",
         color="white",
-        fontsize=15,
+        fontsize=20,
         pad=16,
     )
     ax.axis("off")
@@ -150,16 +150,10 @@ def build_animation() -> Tuple[FuncAnimation, plt.Figure]:
 
     info_artist = ax.text(
         0.02, 0.02, "", transform=ax.transAxes,
-        color="white", fontsize=10, va="bottom", family="monospace",
-    )
-    ax.text(
-        0.02, 0.975,
-        "Gold ring = reset target  •  Blue dot = walker  •  "
-        "Red = recent visits  •  Size = total visits",
-        transform=ax.transAxes, color="#d6dbe3", fontsize=9, va="top",
+        color="white", fontsize=14, va="bottom", family="monospace",
     )
 
-    margin = 1.25
+    margin = 1.08    # was 1.25; the layout spans -1 to 1, so this leaves a small border
     ax.set_xlim(-margin, margin)
     ax.set_ylim(-margin, margin)
 
@@ -223,7 +217,7 @@ def build_animation() -> Tuple[FuncAnimation, plt.Figure]:
         cache_frame_data=False,
         save_count=SAVE_STEPS * SUBSTEPS,
     )
-    fig.tight_layout()
+    fig.subplots_adjust(left=0.01, right=0.99, bottom=0.01, top=0.93)
     return animation, fig
 
 
