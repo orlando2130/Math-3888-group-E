@@ -37,11 +37,11 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
 sys.path.append(str(ROOT))
 
-import load_cyc2008, filter_by_size, evaluate, norm_id   # noqa: E402
+from evaluation import load_cyc2008, filter_by_size, evaluate, norm_id   # noqa: E402
 from reading_in import read_in_proteins                              # noqa: E402
 
-DEFAULT_NETWORK = ROOT / "data" / "raw" / "protein.links.v12.0.txt.gz"
-DEFAULT_ESSENTIAL = ROOT / "data" / "raw" / "EssentialProteins_YeastMine_cerevisiae.csv"
+DEFAULT_NETWORK = HERE / "protein.links.v12.0.txt.gz"
+DEFAULT_ESSENTIAL = HERE / "EssentialProteins_YeastMine_cerevisiae.csv"
 DEFAULT_COMPLEXES = HERE / "CYC2008.xls"
 DEFAULT_OUTDIR = HERE / "louvain_output"
 
