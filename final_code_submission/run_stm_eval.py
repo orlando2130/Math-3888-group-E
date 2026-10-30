@@ -24,18 +24,15 @@ import pandas as pd
 HERE = Path(__file__).resolve().parent            # .../evaluation
 ROOT = HERE.parent                                 # project root
 
-DEFAULT_NETWORK = ROOT / "data" / "raw" / "protein.links.v12.0.txt.gz"
-DEFAULT_ESSENTIAL = ROOT / "data" / "raw" / "EssentialProteins_YeastMine_cerevisiae.csv"
+DEFAULT_NETWORK = HERE / "protein.links.v12.0.txt.gz"
+DEFAULT_ESSENTIAL = HERE / "EssentialProteins_YeastMine_cerevisiae.csv"
 DEFAULT_COMPLEXES = HERE / "CYC2008.xls"
 DEFAULT_OUTDIR = HERE / "stm_output"
-
-sys.path.insert(0, str(HERE / "STM_alg"))   # so `import stm` finds STM_alg/stm.py
-sys.path.append(str(ROOT))                  # so `from src.reading_in import ...` works
 
 import stm                                                   # noqa: E402
 from evaluation import (load_cyc2008, filter_by_size,        # noqa: E402
                         evaluate, norm_id)
-from src.reading_in import read_in_proteins                  # noqa: E402
+from reading_in import read_in_proteins                  # noqa: E402
 
 
 def save_clusters(clusters, path):
